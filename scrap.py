@@ -38,3 +38,5 @@ df = pd.DataFrame(filtered_quotes)
 
 # Écrire les résultats dans un fichier CSV
 df.to_csv("results.csv", index=False)
+
+print("Le fichier 'result.csv' a été généré.")
