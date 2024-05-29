@@ -1,41 +1,72 @@
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
+import csv
 
-# URL de base
-base_url = "https://quotes.toscrape.com/page/{}/"
+# Constantes pour les URLs
+BASE_URL = "https://quotes.toscrape.com"
+LOGIN_URL = f"{BASE_URL}/login"
 
-# Tags à filtrer
-desired_tags = {"love", "inspirational", "life", "humor"}
+# Informations d'authentification
+LOGIN_DATA = {
+    'username': 'test',
+    'password': 'test'
+}
 
-# Liste pour stocker les citations filtrées
-filtered_quotes = []
+# Tags cibles pour les citations
+TARGET_TAGS = {"love", "inspirational", "life", "humor", "books"}
 
-# Fonction pour récupérer et filtrer les citations d'une page donnée
-def get_quotes_from_page(page_number):
-    url = base_url.format(page_number)
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, "html.parser")
-    
-    # Trouver toutes les citations sur la page
+def login_and_get_session():
+    """Effectue l'authentification et retourne la session"""
+    session = requests.Session()
+    response = session.get(LOGIN_URL)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    csrf_token = soup.find('input', {'name': 'csrf_token'})['value']
+    LOGIN_DATA['csrf_token'] = csrf_token
+    response = session.post(LOGIN_URL, data=LOGIN_DATA)
+    if response.status_code != 200:
+        return None
+    return session
+
+def extract_quotes(page_num, session):
+    """Extrait les citations de la page spécifiée"""
+    url = f"{BASE_URL}/page/{page_num}/"
+    response = session.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
     quotes = soup.find_all("div", class_="quote")
-    
+    filtered_quotes = []
     for quote in quotes:
-        text = quote.find("span", class_="text").get_text()
-        tags = {tag.get_text() for tag in quote.find_all("a", class_="tag")}
-        
-        # Vérifier si l'une des tags désirées est présente
-        if desired_tags.intersection(tags):
+        tags = {tag.text for tag in quote.find_all("a", class_="tag")}
+        if TARGET_TAGS.intersection(tags) or (page_num <= 2 and "books" in tags):
+            text = quote.find("span", class_="text").text
             filtered_quotes.append({"text": text, "tags": ", ".join(tags)})
+    return filtered_quotes
 
-# Récupérer les citations des cinq premières pages
-for page in range(1, 6):
-    get_quotes_from_page(page)
+def scrape_quotes(session, pages=5):
+    """Récupère les citations des premières pages spécifiées"""
+    all_quotes = []
+    for page_num in range(1, pages + 1):
+        quotes = extract_quotes(page_num, session)
+        all_quotes.extend(quotes)
+    return all_quotes
 
-# Convertir la liste de citations en DataFrame
-df = pd.DataFrame(filtered_quotes)
+def save_quotes_to_csv(quotes, token, filename="results.csv"):
+    """Sauvegarde les citations dans un fichier CSV"""
+    with open(filename, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Token", token])  # Écrire le token
+        writer.writerow(["Citation", "Tags"])  # Écrire l'en-tête
+        for quote in quotes:
+            writer.writerow([quote['text'], quote['tags']])
 
-# Écrire les résultats dans un fichier CSV
-df.to_csv("results.csv", index=False)
-
-print("Le fichier 'result.csv' a été généré.")
+if __name__ == "__main__":
+    session = login_and_get_session()
+    if session:
+        quotes = scrape_quotes(session)
+        token = session.cookies.get_dict().get('session', None)
+        if token:
+            save_quotes_to_csv(quotes, token)
+            print("Tout a été sauvegardé dans le fichier results.csv.")
+        else:
+            print("Impossible de récupérer le token.")
+    else:
+        print("Impossible de se connecter.")
