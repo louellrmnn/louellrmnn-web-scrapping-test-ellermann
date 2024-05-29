@@ -1,0 +1,15 @@
+> Importer Beautiful Soup 
+
+> Sur la première étape : Importer la librairie pandas 
+> Sur la seconde étape : Importer le module CSV pour lire et écrire un CSV (je n’arrivais pas à récupérer le token avec pandas) 
+
+> Lui renseigner les URL du site et l’URL de connexion (avec les infos de connexion identifiant/ mdr) 
+
+> Lui renseigner les tags des citations que l’on désirait récupérer 
+> Puis créer une liste qui contient tous ces tags 
+
+> Créer une fonction qui permet de récupérer avec Beautiful Soup et son html parser les citations des pages renseignées et les tags associés puis on a pu filtrer les tags que l’on a précisé plus haut 
+
+> Récupérer le token en utilisant le cookie de la session
+
+> On créer et sauvegarde toutes ces infos dans un CSV avec writer 
