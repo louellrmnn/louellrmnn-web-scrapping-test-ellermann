@@ -22,12 +22,11 @@ def get_quotes_from_page(page_number):
     
     for quote in quotes:
         text = quote.find("span", class_="text").get_text()
-        author = quote.find("small", class_="author").get_text()
         tags = {tag.get_text() for tag in quote.find_all("a", class_="tag")}
         
         # Vérifier si l'une des tags désirées est présente
         if desired_tags.intersection(tags):
-            filtered_quotes.append({"text": text, "author": author, "tags": ", ".join(tags)})
+            filtered_quotes.append({"text": text, "tags": ", ".join(tags)})
 
 # Récupérer les citations des cinq premières pages
 for page in range(1, 6):
