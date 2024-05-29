@@ -32,3 +32,9 @@ def get_quotes_from_page(page_number):
 # Récupérer les citations des cinq premières pages
 for page in range(1, 6):
     get_quotes_from_page(page)
+
+# Convertir la liste de citations en DataFrame
+df = pd.DataFrame(filtered_quotes)
+
+# Écrire les résultats dans un fichier CSV
+df.to_csv("results.csv", index=False)
